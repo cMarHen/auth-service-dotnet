@@ -12,18 +12,26 @@ namespace auth_account.Repositories
     public AuthRepository(AuthServiceDbContext context) 
     {
       this.context = context;
-      this.collection = context.Collection;
+      this.collection = context.Accounts;
     }
 
     public virtual async Task CreateAsync(Account account)
     {
-      await collection.AddAsync(account);
-      throw new NotImplementedException();
+      await context.AddAsync(account);
+      await context.SaveChangesAsync();
     }
 
-    public virtual async Task<Account> GetAsync()
+    public virtual async Task<Account> GetAsync(string username)
     {
-      throw new NotImplementedException();
+      Account account = await this.collection.FirstOrDefaultAsync<Account>(
+        acc => acc.username == username
+      );
+
+      if (account != null) {
+        return account;
+      } else {
+        throw new Exception("Could not find a member with this username");
+      }
     }
 
     public virtual async Task UpdateAsync(Account account)

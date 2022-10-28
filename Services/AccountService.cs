@@ -11,15 +11,15 @@ namespace auth_account.Services
 {
     public class AccountService : IAccountService
     {
-        private readonly AuthServiceDbContext authDbContext;
+        private readonly IAuthRepository authRepository;
         private readonly PasswordHasher hasher;
         private readonly IConfiguration configuration;
         private readonly JwtSecurityTokenHandler tokenHandler;
 
-        public AccountService(IConfiguration configuration, AuthServiceDbContext context)
+        public AccountService(IConfiguration configuration, IAuthRepository authRepository)
         {
-            this.authDbContext = context;
             this.configuration = configuration;
+            this.authRepository = authRepository;
             this.hasher = new PasswordHasher();
             this.tokenHandler = new JwtSecurityTokenHandler();
         }
@@ -31,13 +31,13 @@ namespace auth_account.Services
 
             user.id = Guid.NewGuid();
             user.username = req.username;
+            user.email = req.email;
             user.password =
                 req.password != null ? hasher.HashPassword(req.password) : throw new Exception();
 
             var token = getToken(user);
 
-            await authDbContext.AddAsync(user);
-            await authDbContext.SaveChangesAsync();
+            await authRepository.CreateAsync(user);
 
             if (user != null)
             {
@@ -55,11 +55,7 @@ namespace auth_account.Services
         {
             try
             {
-                System.Console.WriteLine("-----------------");
-                System.Console.WriteLine(account.username);
-                Account validAccount = await authDbContext.Accounts.FirstOrDefaultAsync(
-                    x => x.username == account.username
-                );
+                Account validAccount = await authRepository.GetAsync(account.username);
 
                 hasher.VerifyPassword(validAccount, validAccount.password, account.password);
 

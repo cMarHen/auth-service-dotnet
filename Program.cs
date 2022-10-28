@@ -36,12 +36,18 @@ builder.Services
             };
     });
 
+
 builder.Services.AddDbContext<AuthServiceDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("AuthAccount"));
 });
 
+// builder.Services.AddScoped<IAuthServiceDbContext, AuthServiceDbContext>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+
+// builder.Services.AddScoped<DbContext, AuthServiceDbContext>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+// builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
