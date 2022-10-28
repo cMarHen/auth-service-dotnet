@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using auth_account.Models;
 using auth_account.Interfaces;
+using auth_account.Repositories;
 
 namespace auth_account.Services
 {
@@ -56,7 +57,7 @@ namespace auth_account.Services
             {
                 System.Console.WriteLine("-----------------");
                 System.Console.WriteLine(account.username);
-                Account validAccount = await authDbContext.Users.FirstOrDefaultAsync(
+                Account validAccount = await authDbContext.Accounts.FirstOrDefaultAsync(
                     x => x.username == account.username
                 );
 

@@ -56,7 +56,7 @@ namespace auth_account.Controllers
         public async Task<IActionResult> register(AccountRequest req) {
           try
           {
-            var res = await accountService.createUser(req);
+            var res = await accountService.createAccount(req);
 
             return Ok(res);
           }
