@@ -1,4 +1,8 @@
+using auth_account.Interfaces;
+using auth_account.Repositories;
+using auth_account.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +35,13 @@ builder.Services
                 )
             };
     });
+
+builder.Services.AddDbContext<AuthServiceDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AuthAccount"));
+});
+
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
