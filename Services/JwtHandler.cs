@@ -7,23 +7,24 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace auth_account.Services
 {
-  public class JwtHandler : IJwtHandler
-  {
+    public class JwtHandler : IJwtHandler
+    {
         private readonly IConfiguration config;
         private readonly JwtSecurityTokenHandler tokenHandler;
 
-    public JwtHandler(IConfiguration config)
-    {
-      this.config = config;
-      this.tokenHandler = new JwtSecurityTokenHandler();
-    }
-    public string getToken(Account account)
-    {
-                  var authClaims = new List<Claim>
+        public JwtHandler(IConfiguration config)
+        {
+            this.config = config;
+            this.tokenHandler = new JwtSecurityTokenHandler();
+        }
+
+        public string getToken(Account account)
+        {
+            var authClaims = new List<Claim>
             {
-                new Claim("username", account.username!),
+                new Claim(JwtRegisteredClaimNames.Name, account.username!),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("sub", account.id.ToString())
+                new Claim(JwtRegisteredClaimNames.Sub, account.id.ToString())
             };
 
             var authSigningKey = new SymmetricSecurityKey(
@@ -42,37 +43,44 @@ namespace auth_account.Services
             );
 
             return this.tokenHandler.WriteToken(token);
-    }
+        }
 
-    public string verifyToken(string? token)
-    {
-                try
-          {
-            TokenValidationParameters valParams = new TokenValidationParameters 
+        public string verifyToken(AccountRequest req)
+        {
+            try
             {
-              ValidateIssuer = true,
-              ValidateAudience = true,
-              ValidIssuer = config["JWT:ValidIssuer"],
-              ValidAudience = config["JWT:ValidAudience"],
-              IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(config["JWT:Secret"]))
-            };
+                TokenValidationParameters valParams = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidIssuer = config["JWT:ValidIssuer"],
+                    ValidAudience = config["JWT:ValidAudience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(config["JWT:Secret"])
+                    )
+                };
 
-            // TODO: Get the username from token
+                ClaimsPrincipal principal = this.tokenHandler.ValidateToken(
+                    req.accessToken,
+                    valParams,
+                    out SecurityToken validatedToken
+                );
+                
+                String sub = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                String usernameFromToken = principal.FindFirstValue(ClaimTypes.Name);
 
-            ClaimsPrincipal principal = this.tokenHandler.ValidateToken(token, valParams, out SecurityToken validatedToken);
-            System.Console.WriteLine("Hejhej");
-            
-            
-            System.Console.WriteLine(principal.Claims.ToString());
+                // Verify guid and username
+                if (sub.Length != 36 || req.username != usernameFromToken) {
+                    throw new Exception();
+                }
 
-            return "hejhej";
-          }
-          catch (System.Exception e)
-          {
-            System.Console.WriteLine(e);
-            throw new Exception("Error in validate token");
-          }
+                return sub;
+            }
+            catch (System.Exception e)
+            {
+                System.Console.WriteLine(e);
+                throw new Exception("Error in validate token");
+            }
+        }
     }
-  }
 }

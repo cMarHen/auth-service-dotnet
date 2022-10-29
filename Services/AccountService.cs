@@ -1,25 +1,16 @@
-using System.Text;
-using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
 using auth_account.Models;
 using auth_account.Interfaces;
-using auth_account.Repositories;
 
 namespace auth_account.Services
 {
     public class AccountService : IAccountService
     {
         private readonly IAuthRepository authRepository;
-        private readonly PasswordHasher hasher;/* 
-        private readonly IConfiguration configuration;
-        private readonly JwtSecurityTokenHandler tokenHandler; */
+        private readonly PasswordHasher hasher;
         private readonly IJwtHandler jwtHandler;
 
         public AccountService(IJwtHandler jwtHandler, IAuthRepository authRepository)
         {
-            // this.configuration = configuration;
             this.authRepository = authRepository;
             this.hasher = new PasswordHasher();
             this.jwtHandler = jwtHandler;
@@ -52,13 +43,13 @@ namespace auth_account.Services
             }
         }
 
-        public async Task<AccountResponse> login(AccountRequest account)
+        public async Task<AccountResponse> login(AccountRequest req)
         {
             try
             {
-                Account validAccount = await authRepository.GetAsync(account.username!);
+                Account validAccount = await authRepository.GetAsync(req.username!);
 
-                hasher.VerifyPassword(validAccount, validAccount.password!, account.password!);
+                hasher.VerifyPassword(validAccount, validAccount.password!, req.password!);
 
                 var token = this.jwtHandler.getToken(validAccount);
 
@@ -75,13 +66,33 @@ namespace auth_account.Services
                 System.Console.WriteLine(e);
                 throw new UnauthorizedAccessException("Username or password is wrong");
             }
+        }    
+        public async Task patchPassword(AccountRequest req) // TODO: patchUsrname&Pw
+        {
+            try
+            {
+                String sub = this.jwtHandler.verifyToken(req);
+                Account validAccount = await authRepository.GetAsync(req.username!);
+
+                // Acts as a login
+                hasher.VerifyPassword(validAccount, validAccount.password!, req.oldPassword!);
+
+                // Hash the new password
+                validAccount.password = 
+                req.newPassword != null ? hasher.HashPassword(req.newPassword) : throw new Exception();
+                
+                 await this.authRepository.UpdateAsync(validAccount);
+            }
+            catch (System.Exception e)
+            {
+                System.Console.WriteLine(e);
+                throw new UnauthorizedAccessException("Fail");
+            }
         }
 
         public void verifyAccount(string token)
         {
-          string username = this.jwtHandler.verifyToken(token);
-          System.Console.WriteLine("TILLBAKA I VERIFY USER");
-          System.Console.WriteLine(username);
+          // string username = this.jwtHandler.verifyToken(token);
         }
 
         public Task<Account> getAccount(string token)
@@ -99,69 +110,9 @@ namespace auth_account.Services
             throw new NotImplementedException();
         }
 
-        /* private string getToken(Account account)
-        {
-            var authClaims = new List<Claim>
-            {
-                new Claim("username", account.username!),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("sub", account.id.ToString())
-            };
-
-            var authSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(configuration["JWT:Secret"])
-            );
-
-            var token = new JwtSecurityToken(
-                issuer: configuration["JWT:ValidIssuer"],
-                audience: configuration["JWT:ValidAudience"],
-                expires: DateTime.Now.AddHours(3),
-                claims: authClaims,
-                signingCredentials: new SigningCredentials(
-                    authSigningKey,
-                    SecurityAlgorithms.HmacSha256
-                )
-            );
-
-            return this.tokenHandler.WriteToken(token);
-        } */
-
-        // Verify the token itself, not the account.
-        // Maybe this should be done as a middleware and populate the request object with user?
-        /* private string verifyToken(string token)
-        {
-          try
-          {
-            TokenValidationParameters valParams = new TokenValidationParameters 
-            {
-              ValidateIssuer = true,
-              ValidateAudience = true,
-              ValidIssuer = configuration["JWT:ValidIssuer"],
-              ValidAudience = configuration["JWT:ValidAudience"],
-              IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(configuration["JWT:Secret"]))
-            };
-
-            // TODO: Get the username from token
-
-            ClaimsPrincipal principal = this.tokenHandler.ValidateToken(token, valParams, out SecurityToken validatedToken);
-            System.Console.WriteLine("Hejhej");
-            
-            
-            System.Console.WriteLine(principal.Claims.ToString());
-
-            return "hejhej";
-          }
-          catch (System.Exception e)
-          {
-            System.Console.WriteLine(e);
-            throw new Exception("Error in validate token");
-          }
-        } */
-
         Task<AccountResponse> IAccountService.getAccount(string token)
         {
             throw new NotImplementedException();
         }
-    }
+  }
 }

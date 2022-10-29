@@ -34,9 +34,12 @@ namespace auth_account.Repositories
       }
     }
 
-    public virtual async Task UpdateAsync(Account account)
+    public virtual async Task UpdateAsync(Account updatedAccount)
     {
-      throw new NotImplementedException();
+      Account accountFromDb = await collection.SingleAsync(acc => acc.id == updatedAccount.id);
+      accountFromDb.password = updatedAccount.password;
+
+      await context.SaveChangesAsync();
     }
   }
 }

@@ -73,6 +73,7 @@ namespace auth_account.Controllers
         public async Task<IActionResult> patchPassword(AccountRequest user) {
           try
           {
+            await accountService.patchPassword(user);
             return Ok();
           }
           catch (System.Exception)
