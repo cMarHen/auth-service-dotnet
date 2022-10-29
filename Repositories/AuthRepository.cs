@@ -23,7 +23,7 @@ namespace auth_account.Repositories
 
     public virtual async Task<Account> GetAsync(string username)
     {
-      Account account = await this.collection.FirstOrDefaultAsync<Account>(
+      Account? account = await this.collection.FirstOrDefaultAsync<Account>(
         acc => acc.username == username
       );
 

@@ -1,0 +1,78 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using auth_account.Interfaces;
+using auth_account.Models;
+using Microsoft.IdentityModel.Tokens;
+
+namespace auth_account.Services
+{
+  public class JwtHandler : IJwtHandler
+  {
+        private readonly IConfiguration config;
+        private readonly JwtSecurityTokenHandler tokenHandler;
+
+    public JwtHandler(IConfiguration config)
+    {
+      this.config = config;
+      this.tokenHandler = new JwtSecurityTokenHandler();
+    }
+    public string getToken(Account account)
+    {
+                  var authClaims = new List<Claim>
+            {
+                new Claim("username", account.username!),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("sub", account.id.ToString())
+            };
+
+            var authSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(config["JWT:Secret"])
+            );
+
+            var token = new JwtSecurityToken(
+                issuer: config["JWT:ValidIssuer"],
+                audience: config["JWT:ValidAudience"],
+                expires: DateTime.Now.AddHours(3),
+                claims: authClaims,
+                signingCredentials: new SigningCredentials(
+                    authSigningKey,
+                    SecurityAlgorithms.HmacSha256
+                )
+            );
+
+            return this.tokenHandler.WriteToken(token);
+    }
+
+    public string verifyToken(string? token)
+    {
+                try
+          {
+            TokenValidationParameters valParams = new TokenValidationParameters 
+            {
+              ValidateIssuer = true,
+              ValidateAudience = true,
+              ValidIssuer = config["JWT:ValidIssuer"],
+              ValidAudience = config["JWT:ValidAudience"],
+              IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(config["JWT:Secret"]))
+            };
+
+            // TODO: Get the username from token
+
+            ClaimsPrincipal principal = this.tokenHandler.ValidateToken(token, valParams, out SecurityToken validatedToken);
+            System.Console.WriteLine("Hejhej");
+            
+            
+            System.Console.WriteLine(principal.Claims.ToString());
+
+            return "hejhej";
+          }
+          catch (System.Exception e)
+          {
+            System.Console.WriteLine(e);
+            throw new Exception("Error in validate token");
+          }
+    }
+  }
+}

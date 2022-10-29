@@ -12,16 +12,17 @@ namespace auth_account.Services
     public class AccountService : IAccountService
     {
         private readonly IAuthRepository authRepository;
-        private readonly PasswordHasher hasher;
+        private readonly PasswordHasher hasher;/* 
         private readonly IConfiguration configuration;
-        private readonly JwtSecurityTokenHandler tokenHandler;
+        private readonly JwtSecurityTokenHandler tokenHandler; */
+        private readonly IJwtHandler jwtHandler;
 
-        public AccountService(IConfiguration configuration, IAuthRepository authRepository)
+        public AccountService(IJwtHandler jwtHandler, IAuthRepository authRepository)
         {
-            this.configuration = configuration;
+            // this.configuration = configuration;
             this.authRepository = authRepository;
             this.hasher = new PasswordHasher();
-            this.tokenHandler = new JwtSecurityTokenHandler();
+            this.jwtHandler = jwtHandler;
         }
 
         public async Task<AccountResponse> createAccount(AccountRequest req)
@@ -35,7 +36,7 @@ namespace auth_account.Services
             user.password =
                 req.password != null ? hasher.HashPassword(req.password) : throw new Exception();
 
-            var token = getToken(user);
+            var token = this.jwtHandler.getToken(user);
 
             await authRepository.CreateAsync(user);
 
@@ -55,11 +56,11 @@ namespace auth_account.Services
         {
             try
             {
-                Account validAccount = await authRepository.GetAsync(account.username);
+                Account validAccount = await authRepository.GetAsync(account.username!);
 
-                hasher.VerifyPassword(validAccount, validAccount.password, account.password);
+                hasher.VerifyPassword(validAccount, validAccount.password!, account.password!);
 
-                var token = getToken(validAccount);
+                var token = this.jwtHandler.getToken(validAccount);
 
                 // Populate response
                 AccountResponse res = new AccountResponse();
@@ -78,7 +79,7 @@ namespace auth_account.Services
 
         public void verifyAccount(string token)
         {
-          string username = this.verifyToken(token);
+          string username = this.jwtHandler.verifyToken(token);
           System.Console.WriteLine("TILLBAKA I VERIFY USER");
           System.Console.WriteLine(username);
         }
@@ -98,11 +99,11 @@ namespace auth_account.Services
             throw new NotImplementedException();
         }
 
-        private string getToken(Account account)
+        /* private string getToken(Account account)
         {
             var authClaims = new List<Claim>
             {
-                new Claim("username", account.username),
+                new Claim("username", account.username!),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("sub", account.id.ToString())
             };
@@ -123,11 +124,11 @@ namespace auth_account.Services
             );
 
             return this.tokenHandler.WriteToken(token);
-        }
+        } */
 
         // Verify the token itself, not the account.
         // Maybe this should be done as a middleware and populate the request object with user?
-        private string verifyToken(string token)
+        /* private string verifyToken(string token)
         {
           try
           {
@@ -156,7 +157,7 @@ namespace auth_account.Services
             System.Console.WriteLine(e);
             throw new Exception("Error in validate token");
           }
-        }
+        } */
 
         Task<AccountResponse> IAccountService.getAccount(string token)
         {
