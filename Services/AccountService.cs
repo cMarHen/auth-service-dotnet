@@ -71,7 +71,7 @@ namespace auth_account.Services
         {
             try
             {
-                String sub = this.jwtHandler.verifyToken(req);
+                String sub = this.jwtHandler.verifyToken(req).id!;
                 Account validAccount = await authRepository.GetAsync(req.username!);
 
                 // Acts as a login
@@ -90,9 +90,19 @@ namespace auth_account.Services
             }
         }
 
-        public void verifyAccount(string token)
+        public AccountRequest verifyAccount(String authorizationHeader, AccountRequest req)
         {
-          // string username = this.jwtHandler.verifyToken(token);
+          String[] schemeAndToken = authorizationHeader.Split(' ');
+
+          // Verify Bearer _and_ token
+          if (schemeAndToken[0].Equals("Bearer") && schemeAndToken[1].Length > 300)
+          {
+            req.accessToken = schemeAndToken[1];
+            return jwtHandler.verifyToken(req); // Edit verifyToken to take a string
+          } else 
+          {
+            throw new UnauthorizedAccessException();
+          }
         }
 
         public Task<Account> getAccount(string token)

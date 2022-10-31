@@ -1,8 +1,10 @@
+using auth_account.Models;
+
 namespace auth_account.Interfaces
 {
   public interface IJwtHandler
   {
-    public string getToken(auth_account.Models.Account account);
-    public string verifyToken(auth_account.Models.AccountRequest req);
+    public string getToken(Account account);
+    public AccountRequest verifyToken(AccountRequest req);
   }
 }

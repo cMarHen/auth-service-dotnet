@@ -45,7 +45,7 @@ namespace auth_account.Services
             return this.tokenHandler.WriteToken(token);
         }
 
-        public string verifyToken(AccountRequest req)
+        public AccountRequest verifyToken(AccountRequest req)
         {
             try
             {
@@ -71,10 +71,13 @@ namespace auth_account.Services
 
                 // Verify guid and username
                 if (sub.Length != 36 || req.username != usernameFromToken) {
-                    throw new Exception();
+                    throw new Exception("Username from body and token is not the same");
                 }
 
-                return sub;
+                req.id = sub;
+                req.accessToken = req.accessToken; // TODO: Refresh token if needed, check exptime and so on
+
+                return req;
             }
             catch (System.Exception e)
             {

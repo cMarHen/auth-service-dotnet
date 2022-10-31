@@ -1,7 +1,7 @@
 using auth_account.Models;
 using auth_account.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.Authorization;
 
 namespace auth_account.Controllers
 {
@@ -79,6 +79,32 @@ namespace auth_account.Controllers
           catch (System.Exception)
           {
             return Unauthorized("Failed to edit credentials.");
+          }
+        }
+
+        // Use this to authenticate user
+        // Refresh token if needed
+        // [Authorize]
+        [Route("authenticate")]
+        [HttpPost]
+        public async Task<IActionResult> authenticate(AccountRequest req)
+        {
+          try
+          {
+            // Verify Authorization header
+            if (!Request.Headers.ContainsKey("Authorization"))
+            {
+              throw new Exception();
+            }
+
+            accountService.verifyAccount(Request.Headers["Authorization"].ToString(), req);
+            
+            return Ok("Autentisierad");
+          }
+          catch (System.Exception e)
+          {
+            System.Console.WriteLine(e);
+            return Unauthorized();
           }
         }
     }

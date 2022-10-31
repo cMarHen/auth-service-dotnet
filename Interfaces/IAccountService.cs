@@ -8,7 +8,7 @@ namespace auth_account.Interfaces
     Task<AccountResponse> createAccount(AccountRequest req);
     Task<AccountResponse> getAccount(string token);
     Task patchPassword(AccountRequest req);
-    void verifyAccount(string token);
+    AccountRequest verifyAccount(String authorizationHeader, AccountRequest req);
     void logout(string token);
     void refreshToken(string token);
   }

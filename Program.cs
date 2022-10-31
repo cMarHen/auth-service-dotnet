@@ -7,8 +7,6 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 ConfigurationManager config = builder.Configuration;
 
 // Add services to the container.
@@ -37,17 +35,16 @@ builder.Services
     });
 
 
-builder.Services.AddDbContext<AuthServiceDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("AuthAccount"));
-});
-
-builder.Services.AddSingleton<IJwtHandler, JwtHandler>();
-builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services
+    .AddDbContext<AuthServiceDbContext>(options =>
+        {
+            options.UseSqlServer(builder.Configuration.GetConnectionString("AuthAccount"));
+        })
+    .AddSingleton<IJwtHandler, JwtHandler>()
+    .AddScoped<IAuthRepository, AuthRepository>()
+    .AddScoped<IAccountService, AccountService>();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
