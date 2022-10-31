@@ -71,7 +71,7 @@ namespace auth_account.Services
         {
             try
             {
-                String sub = this.jwtHandler.verifyToken(req).id!;
+                req = this.jwtHandler.verifyToken(req);
                 Account validAccount = await authRepository.GetAsync(req.username!);
 
                 // Acts as a login
